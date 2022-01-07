@@ -8,6 +8,17 @@ using namespace std;
 
 void magnitudeSobel()
 {
+    
+    //// ++++++++++++++++++++++
+
+
+    //   Implemented in gradient_sobel.cpp
+
+
+    //// +++++++++++++++++++++++
+    
+    
+    
     // load image from file
     cv::Mat img;
     img = cv::imread("./images/img1gray.png");
@@ -18,6 +29,7 @@ void magnitudeSobel()
 
     // apply smoothing using the GaussianBlur() function from the OpenCV
     // ToDo : Add your code here
+    
 
     // create filter kernels using the cv::Mat datatype both for x and y
     // ToDo : Add your code here

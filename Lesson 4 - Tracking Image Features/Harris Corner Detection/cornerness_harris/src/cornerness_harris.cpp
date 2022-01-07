@@ -7,6 +7,73 @@
 
 using namespace std;
 
+// this function illustrates a very simple non-maximum suppression to extract the strongest corners
+// in a local neighborhood around each pixel
+std::vector<cv::KeyPoint> PerformNMS(cv::Mat corner_img, int minResponse, bool visualizeCornerImg = false)
+{
+    // Return
+    std::vector<cv::KeyPoint> keypoints;
+
+
+    // define size of sliding window
+    int sw_size = 6;                  // should be odd so we can center it on a pixel and have symmetry in all directions
+    int sw_dist = floor(sw_size / 2); // number of pixels to left/right and top/down to investigate
+
+    // create output image
+    cv::Mat result_img = cv::Mat::zeros(corner_img.rows, corner_img.cols, CV_8U);
+
+    // loop over all pixels in the corner image
+    for (int r = sw_dist; r < corner_img.rows - sw_dist - 1; r++) // rows
+    {
+        for (int c = sw_dist; c < corner_img.cols - sw_dist - 1; c++) // cols
+        {
+
+            int response = (int)corner_img.at<float>(r, c);
+            std::cout << response << std::endl;
+            if (response > minResponse)
+            {
+                // loop over all pixels within sliding window around the current pixel 
+                // -->> to find the local max value
+                unsigned int max_val{0}; // keeps track of strongest response
+                for (int rs = r - sw_dist; rs <= r + sw_dist; rs++)
+                {
+                    for (int cs = c - sw_dist; cs <= c + sw_dist; cs++)
+                    {
+                        // check wether max_val needs to be updated
+                        unsigned int new_val = (int)corner_img.at<float>(rs, cs);
+                        max_val = max_val < new_val ? new_val : max_val;
+                    }
+                }
+
+                // check wether current pixel is local maximum
+                if (response == max_val)
+                {
+                    
+                        result_img.at<unsigned int>(r, c) = max_val;
+                        cv::KeyPoint keypoint((float)c, (float)r, (float)sw_size, (float)max_val);
+                        keypoints.push_back(keypoint);
+                    
+                    
+                }
+            }
+            
+                
+        }
+    }
+  	  
+    if (visualizeCornerImg)
+    {
+        // visualize results
+        std::string windowName = "NMS Result Image";
+        cv::namedWindow(windowName, 5);
+        cv::imshow(windowName, result_img);
+    }
+    
+  
+    return keypoints;
+}
+
+
 void cornernessHarris()
 {
     // load image from file
@@ -28,17 +95,44 @@ void cornernessHarris()
     cv::convertScaleAbs(dst_norm, dst_norm_scaled);
 
     // visualize results
-    string windowName = "Harris Corner Detector Response Matrix";
+    string windowName = "Raw Harris Corner Detector Response Matrix";
+
+    cv::namedWindow(windowName, 4);
+    cv::imshow(windowName, dst);
+    
+
+    windowName = "Normalized Harris Corner Detector Response Matrix";
+    cv::namedWindow(windowName, 4);
+    cv::imshow(windowName, dst_norm);
+
+    windowName = "Harris Corner Detector Response Matrix";
     cv::namedWindow(windowName, 4);
     cv::imshow(windowName, dst_norm_scaled);
-    cv::waitKey(0);
+
+
+    
 
     // TODO: Your task is to locate local maxima in the Harris response matrix 
-    // and perform a non-maximum suppression (NMS) in a local neighborhood around 
+    // and perforom a non-maximum suppressin (NMS) in a local neighborhood around 
     // each maximum. The resulting coordinates shall be stored in a list of keypoints 
     // of the type `vector<cv::KeyPoint>`.
 
+    std::vector<cv::KeyPoint> keypoints; 
+    keypoints = PerformNMS(dst_norm, minResponse, true);
+
+    //-- Draw keypoints
+    cv::Mat img_keypoints;
+    cv::drawKeypoints( dst_norm_scaled, keypoints, img_keypoints, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+
+    windowName = "Harris Corner Detector Response with Keypoints";
+    cv::namedWindow(windowName, 4);
+    cv::imshow(windowName, img_keypoints);
+
+    cv::waitKey(0);
+    
 }
+
+
 
 int main()
 {
